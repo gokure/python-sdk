@@ -12,7 +12,7 @@ def run(_cloud_func_name, **params):
     调用 LeanEngine 上的远程代码
 
     :param name: 需要调用的远程 Cloud Code 的名称
-    :type name: basestring
+    :type name: str
     :param params: 调用参数
     :return: 调用结果
     """
@@ -28,10 +28,10 @@ def request_sms_code(phone_number, idd='+86', sms_type='sms', template=None, par
     :param phone_number: 需要验证的手机号码
     :param idd: 号码的所在地国家代码，默认为中国（+86）
     :param sms_type: 验证码发送方式，'voice' 为语音，'sms' 为短信
+    :param template: 短信模版
+    :param params: 模版参数
     :return: None
     """
-    if not isinstance(phone_number, basestring):
-        raise TypeError('phone_number must be a string')
 
     data = {
         'mobilePhoneNumber': phone_number,

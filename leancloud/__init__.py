@@ -27,8 +27,8 @@ from .query import Query
 from .relation import Relation
 from .role import Role
 from .user import User
-import client
-import push
+from . import client
+from . import push
 
 
 __author__ = 'asaka <lan@leancloud.rocks>'

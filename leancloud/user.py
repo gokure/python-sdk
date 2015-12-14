@@ -3,6 +3,7 @@
 
 import threading
 
+from six import string_types, iterkeys
 from leancloud import FriendshipQuery
 from leancloud import client
 from leancloud import Object
@@ -31,7 +32,7 @@ class User(Object):
 
     @classmethod
     def create_follower_query(cls, user_id):
-        if not user_id or not isinstance(user_id, basestring):
+        if not user_id or not isinstance(user_id, string_types):
             raise TypeError('invalid user_id: {0}'.format(user_id))
         query = FriendshipQuery('_Follower')
         query.equal_to('user', User.create_without_data(user_id))
@@ -39,7 +40,7 @@ class User(Object):
 
     @classmethod
     def create_followee_query(cls, user_id):
-        if not user_id or not isinstance(user_id, basestring):
+        if not user_id or not isinstance(user_id, string_types):
             raise TypeError('invalid user_id: {0}'.format(user_id))
         query = FriendshipQuery('_Followee')
         query.equal_to('user', User.create_without_data(user_id))
@@ -73,8 +74,7 @@ class User(Object):
         auth_data = self.get('authData')
         if not auth_data:
             return
-        keys = auth_data.keys()
-        for key in keys:
+        for key in iterkeys(auth_data):
             if not auth_data[key]:
                 del auth_data[key]
 
@@ -82,7 +82,7 @@ class User(Object):
         auth_data = self.get('authData')
         if not auth_data:
             return
-        for key in auth_data.keys():
+        for key in iterkeys(auth_data):
             self._sync_auth_data(key)
 
     def _sync_auth_data(self, key):
@@ -218,8 +218,8 @@ class User(Object):
     @classmethod
     def signup_or_login_with_mobile_phone(cls, phone_number, sms_code):
         '''
-        param phone_nubmer: basestring
-        param sms_code: basestring
+        param phone_nubmer: string_types
+        param sms_code: string_types
 
         在调用此方法前请先使用 request_sms_code 请求 sms code
         '''

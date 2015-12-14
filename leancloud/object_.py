@@ -5,12 +5,11 @@ from datetime import datetime
 
 import iso8601
 from werkzeug import LocalProxy
-
+from six import iteritems, with_metaclass
 import leancloud
 from leancloud import utils
 from leancloud import client
 from leancloud import operation
-
 
 __author__ = 'asaka <lan@leancloud.rocks>'
 
@@ -40,8 +39,7 @@ class ObjectMeta(type):
         return object_class
 
 
-class Object(object):
-    __metaclass__ = ObjectMeta
+class Object(with_metaclass(ObjectMeta, object)):
 
     def __init__(self, **attrs):
         """
@@ -62,7 +60,7 @@ class Object(object):
         self.created_at = None
         self.updated_at = None
 
-        for k, v in attrs.iteritems():
+        for k, v in iteritems(attrs):
             self.set(k, v)
 
     @classmethod
@@ -71,13 +69,11 @@ class Object(object):
         派生一个新的 leancloud.Object 子类
 
         :param name: 子类名称
-        :type name: basestring
+        :type name: string_types
         :return: 派生的子类
         :rtype: ObjectMeta
         """
-        if isinstance(name, unicode):
-            name = name.encode('utf-8')
-        return type(name, (cls,), {})
+        return type(str(name), (cls,), {})
 
     @classmethod
     def create(cls, class_name, **attributes):
@@ -85,7 +81,7 @@ class Object(object):
         根据参数创建一个 leancloud.Object 的子类的实例化对象
 
         :param class_name: 子类名称
-        :type class_name: basestring
+        :type class_name: string_types
         :param attributes: 对象属性
         :return: 派生子类的实例
         :rtype: Object
@@ -99,7 +95,7 @@ class Object(object):
         根据 objectId 创建一个 leancloud.Object，代表一个服务器上已经存在的对象。可以调用 fetch 方法来获取服务器上的数据
 
         :param id_: 对象的 objectId
-        :type id_: basestring
+        :type id_: string_types
         :return: 没有数据的对象
         :rtype: Object
         """
@@ -118,8 +114,7 @@ class Object(object):
     def _dump(self, seen_objects=None):
         seen_objects = seen_objects or []
         obj = copy.deepcopy(self.attributes)
-        for k, v in obj.iteritems():
-            obj[k] = utils.encode(v, seen_objects)
+        obj = dict((k, utils.encode(v, seen_objects)) for k, v in iteritems(obj))
 
         if self.id is not None:
             obj['objectId'] = self.id
@@ -266,7 +261,7 @@ class Object(object):
     def _cancel_save(self):
         failed_changes = self._op_set_queue.pop(0)
         next_changes = self._op_set_queue[0]
-        for key, op in failed_changes.iteritems():
+        for key, op in iteritems(failed_changes):
             op1 = failed_changes[key]
             op2 = next_changes[key]
             if op1 and op2:
@@ -284,7 +279,7 @@ class Object(object):
         获取对象字段的值
 
         :param attr: 字段名
-        :type attr: basestring
+        :type attr: string_types
         :return: 字段值
         """
         return self.attributes.get(attr)
@@ -294,7 +289,7 @@ class Object(object):
         返回对象上相应字段的 Relation
 
         :param attr: 字段名
-        :type attr: basestring
+        :type attr: string_types
         :return: Relation
         :rtype: leancloud.Relation
         """
@@ -321,15 +316,14 @@ class Object(object):
         在当前对象此字段上赋值
 
         :param key_or_attrs: 字段名，或者一个包含 字段名 / 值的 dict
-        :type key_or_attrs: basestring or dict
+        :type key_or_attrs: string_types or dict
         :param value: 字段值
         :param unset:
         :return: 当前对象，供链式调用
         """
         if isinstance(key_or_attrs, dict) and value is None:
             attrs = key_or_attrs
-            keys = attrs.keys()
-            for k in keys:
+            for k in list(attrs):
                 if isinstance(attrs[k], LocalProxy):
                     attrs[k] = attrs[k]._get_current_object()
         else:
@@ -339,15 +333,14 @@ class Object(object):
             attrs = {key: utils.decode(key, value)}
 
         if unset:
-            for k in attrs.keys():
+            for k in list(attrs):
                 attrs[k] = operation.Unset()
 
         self.validate(attrs)
 
         self._merge_magic_field(attrs)
 
-        keys = attrs.keys()
-        for k in keys:
+        for k in list(attrs):
             v = attrs[k]
             # TODO: Relation
 
@@ -422,8 +415,7 @@ class Object(object):
 
     def _dump_save(self):
         result = copy.deepcopy(self._op_set_queue[0])
-        for k, v in result.iteritems():
-            result[k] = v.dump()
+        result = dict((k, v.dump()) for k, v in iteritems(result))
         return result
 
     def fetch(self):
@@ -485,7 +477,7 @@ class Object(object):
 
         self._merge_magic_field(server_data)
 
-        for key, value in server_data.iteritems():
+        for key, value in iteritems(server_data):
             self._server_data[key] = utils.decode(key, value)
 
         self._rebuild_all_estimated_data()
@@ -513,7 +505,7 @@ class Object(object):
         self.attributes = copy.deepcopy(self._server_data)
 
     def _apply_op_set(self, op_set, target):
-        for key, change in op_set.iteritems():
+        for key, change in iteritems(op_set):
             target[key] = change._apply(target.get(key), self, key)
             if target[key] == operation._UNSET:
                 del target[key]

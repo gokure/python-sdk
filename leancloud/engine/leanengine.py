@@ -1,9 +1,12 @@
 # coding: utf-8
 
+from __future__ import print_function
 import json
 import logging
 import traceback
 import functools
+
+from six import iterkeys
 
 import leancloud
 from werkzeug.wrappers import Response
@@ -80,7 +83,7 @@ class LeanEngineApplication(object):
         adapter = self.url_map.bind_to_environ(request.environ)
         try:
             endpoint, values = adapter.match()
-        except HTTPException, e:
+        except HTTPException as e:
             return e
 
         params = request.get_data()
@@ -102,14 +105,14 @@ class LeanEngineApplication(object):
             else:
                 raise ValueError    # impossible
             return Response(json.dumps(result), mimetype='application/json')
-        except LeanEngineError, e:
+        except LeanEngineError as e:
             return Response(
                 json.dumps({'code': e.code, 'error': e.message}),
                 status=400,
                 mimetype='application/json'
             )
         except Exception:
-            print traceback.format_exc()
+            print(traceback.format_exc())
             return Response(
                 json.dumps({'code': 141, 'error': 'Cloud Code script had an error.'}),
                 status=500,
@@ -138,8 +141,7 @@ def register_cloud_func(func):
 def dispatch_cloud_func(func_name, params):
     # delete all keys in params which starts with low dash.
     # JS SDK may send it's app info with them.
-    keys = params.keys()
-    for key in keys:
+    for key in iterkeys(params):
         if key.startswith('_'):
             params.pop(key)
 
@@ -200,7 +202,7 @@ def dispatch_cloud_hook(class_name, hook_name, params):
 
 
 def register_on_verified(verify_type):
-    if verify_type not in set(['sms', 'email']):
+    if verify_type not in ('sms', 'email'):
         raise RuntimeError('verify_type must be sms or email')
 
     func_name = '__on_verified_{0}'.format(verify_type)
@@ -240,7 +242,7 @@ def dispatch_on_login(params):
 
 
 def dispatch_ops_meta_data():
-    return _cloud_codes.keys()
+    return list(_cloud_codes.keys())
 
 
 def register_on_bigquery(event):
