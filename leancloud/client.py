@@ -6,6 +6,7 @@ import time
 import hashlib
 import requests
 
+from six import iteritems
 import leancloud
 from leancloud import utils
 
@@ -36,11 +37,11 @@ TIMEOUT_SECONDS = 15
 def init(app_id, app_key=None, master_key=None):
     """初始化 LeanCloud 的 AppId / AppKey / MasterKey
 
-    :type app_id: basestring
+    :type app_id: string_types
     :param app_id: 应用的 Application ID
-    :type app_key: None or basestring
+    :type app_key: None or string_types
     :param app_key: 应用的 Application Key
-    :type master_key: None or basestring
+    :type master_key: None or string_types
     :param master_key: 应用的 Master Key
     """
     if (not app_key) and (not master_key):
@@ -153,16 +154,14 @@ def use_region(region):
 
 def get_server_time():
     response = requests.get(get_base_url() + '/date')
-    content = json.loads(response.content)
+    content = json.loads(str(response.content.decode('utf-8')))
     return utils.decode('iso', content)
 
 
 @need_init
 @check_error
 def get(url, params, headers=None):
-    for k, v in params.iteritems():
-        if isinstance(v, dict):
-            params[k] = json.dumps(v, separators=(',', ':'))
+    params = dict((k, json.dumps(v, separators=(',', ':'))) for k, v in iteritems(params) if isinstance(v, dict))
     response = requests.get(get_base_url() + url, headers=headers, params=params, timeout=TIMEOUT_SECONDS)
     return response
 

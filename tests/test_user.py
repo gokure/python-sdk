@@ -89,7 +89,7 @@ def test_login():
 def test_file_field():
     user = User()
     user.login('user1', 'password')
-    user.set('xxxxx', File('xxx.txt', buffer('qqqqq')))
+    user.set('xxxxx', File('xxx.txt', 'qqqqq'))
     user.save()
 
     q = Query(User)

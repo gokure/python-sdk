@@ -2,8 +2,14 @@
 
 import os
 
-from StringIO import StringIO
-import cStringIO
+from six import PY2
+
+if PY2:
+    from StringIO import StringIO
+    import cStringIO
+else:
+    from io import StringIO
+
 from nose.tools import with_setup
 from nose.tools import assert_raises
 from nose.tools import raises
@@ -50,7 +56,7 @@ def test_create_without_data():
 
 def test_acl():
     acl = ACL()
-    f = File('Blah', buffer('xxx'))
+    f = File('Blah', 'xxx')
     assert_raises(TypeError, f.set_acl, 'a')
     f.set_acl(acl)
     assert f.get_acl() == acl
@@ -58,7 +64,7 @@ def test_acl():
 
 @with_setup(setup_func)
 def test_save():
-    f = File('Blah', buffer('xxx'))
+    f = File('Blah', 'xxx')
     f.save()
     assert f.id
 
@@ -79,8 +85,7 @@ def test_thumbnail_url_erorr():
 @raises(ValueError)
 def test_thumbnail_size_erorr():
     r = requests.get('http://www.lenna.org/full/len_std.jpg')
-    b = buffer(r.content)
-    f = File('Lenna2.jpg', b)
+    f = File('Lenna2.jpg', r.content)
     f.save()
     assert f.id
 
@@ -91,8 +96,7 @@ def test_thumbnail_size_erorr():
 @with_setup(setup_func)
 def test_thumbnail():
     r = requests.get('http://www.lenna.org/full/len_std.jpg')
-    b = buffer(r.content)
-    f = File('Lenna2.jpg', b)
+    f = File('Lenna2.jpg', r.content)
     f.save()
     assert f.id
 
@@ -103,8 +107,7 @@ def test_thumbnail():
 @with_setup(setup_func)
 def test_destroy():
     r = requests.get('http://www.lenna.org/full/len_std.jpg')
-    b = buffer(r.content)
-    f = File('Lenna2.jpg', b)
+    f = File('Lenna2.jpg', r.content)
     f.save()
     assert f.id
     f.destroy()

@@ -2,11 +2,11 @@
 import os
 import re
 import base64
-import cStringIO
-import StringIO
 import random
 
 import qiniu
+from six import BytesIO
+from six.moves import range
 
 import leancloud
 from leancloud import client
@@ -44,17 +44,13 @@ class File(object):
 
         if data is None:
             self._source = None
-        elif isinstance(data, cStringIO.OutputType):
-            self._source = StringIO.StringIO(data.getvalue())
-        elif isinstance(data, StringIO.StringIO):
-            self._source = data
-        elif isinstance(data, file):
+        elif hasattr(data, 'seek') and hasattr(data, 'read'):
             data.seek(0, os.SEEK_SET)
-            self._source = StringIO.StringIO(data.read())
-        elif isinstance(data, buffer):
-            self._source = StringIO.StringIO(data)
+            self._source = BytesIO(data.read())
+        elif hasattr(data, 'encode'):
+            self._source = BytesIO(data.encode())
         else:
-            raise TypeError('data must be a StringIO / buffer / file instance')
+            self._source = BytesIO(data)
 
         if self._source:
             self._source.seek(0, os.SEEK_END)
@@ -128,13 +124,13 @@ class File(object):
 
     def save(self):
         if self._source:
-            output = cStringIO.StringIO()
+            output = BytesIO()
             self._source.seek(0)
             base64.encode(self._source, output)
             self._source.seek(0)
             output.seek(0)
             hex_octet = lambda: hex(int(0x10000 * (1 + random.random())))[-4:]
-            key = ''.join(hex_octet() for _ in xrange(4))
+            key = ''.join(hex_octet() for _ in range(4))
             key = '{0}.{1}'.format(key, self.extension)
             data = {
                 'name': self._name,

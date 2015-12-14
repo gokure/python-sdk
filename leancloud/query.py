@@ -1,8 +1,9 @@
 # coding: utf-8
 
 import json
-import types
 import warnings
+
+from six import string_types, class_types
 
 import leancloud
 from leancloud import client
@@ -35,12 +36,12 @@ class Query(object):
         """
 
         :param query_class: 要查询的 class 名称或者对象
-        :type query_class: basestring or leancloud.ObjectMeta
+        :type query_class: string_types or leancloud.ObjectMeta
         """
-        if isinstance(query_class, basestring):
+        if isinstance(query_class, string_types):
             query_class = Object.extend(query_class)
 
-        if (not isinstance(query_class, (type, types.ClassType))) or (not issubclass(query_class, Object)):
+        if (not isinstance(query_class, class_types)) or (not issubclass(query_class, Object)):
             raise ValueError('Query takes string or LeanCloud Object')
 
         self._query_class = query_class
@@ -364,7 +365,7 @@ class Query(object):
         :param multi_line: 查询是否匹配多行，默认不匹配
         :rtype: Query
         """
-        if not isinstance(regex, basestring):
+        if not isinstance(regex, string_types):
             raise TypeError('matched only accept str or unicode')
         self._add_condition(key, '$regex', regex)
         modifiers = ''

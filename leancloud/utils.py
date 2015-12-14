@@ -1,15 +1,16 @@
 # coding: utf-8
 
+from __future__ import absolute_import
+import io
 import copy
 import json
 import gzip
 from datetime import datetime
-from cStringIO import StringIO
 
 import arrow
 import iso8601
 from dateutil import tz
-
+from six import iteritems, BytesIO
 import leancloud
 from leancloud import operation
 
@@ -59,7 +60,7 @@ def encode(value, disallow_objects=False):
         return [encode(x, disallow_objects) for x in value]
 
     if isinstance(value, dict):
-        return dict([(k, encode(v, disallow_objects)) for k, v in value.iteritems()])
+        return dict([(k, encode(v, disallow_objects)) for k, v in iteritems(value)])
 
     return value
 
@@ -109,7 +110,7 @@ def encode(value, disallow_objects=False):
 #         }
 #
 #     if isinstance(value, dict):
-#         return {k: encode(v, seen_objects, disallow_objects) for k, v in value.iteritems()}
+#         return {k: encode(v, seen_objects, disallow_objects) for k, v in iteritems(value)}
 #
 #     return value
 
@@ -125,7 +126,7 @@ def decode(key, value):
         return value
 
     if '__type' not in value:
-        return dict([(k, decode(k, v)) for k, v in value.iteritems()])
+        return dict([(k, decode(k, v)) for k, v in iteritems(value)])
 
     _type = value['__type']
 
@@ -202,7 +203,7 @@ def traverse_object(obj, callback, seen=None):
 
     if isinstance(obj, dict):
         # print 'is dict'
-        for key, child in obj.iteritems():
+        for key, child in list(obj.items()):
             new_child = traverse_object(child, callback, seen)
             if new_child:
                 obj[key] = new_child
@@ -222,9 +223,9 @@ def response_to_json(response):
     # hack for requests in python 2.6
     if 'application/json' in response.headers['Content-Type']:
         if content[:2] == '\x1f\x8b':  # gzip file magic header
-            f = StringIO(content)
+            f = BytesIO(content)
             g = gzip.GzipFile(fileobj=f)
             content = g.read()
             g.close()
             f.close()
-    return json.loads(content)
+    return json.loads(str(content.decode('utf-8')))
